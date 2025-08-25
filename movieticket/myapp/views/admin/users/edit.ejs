@@ -1,11 +1,11 @@
 <%- include('../../partials/header', { title: 'Edit User', user }) %>
-
+<%- include('../../partials/message') %>
 <div class="container py-4">
-  <a href="/admin/users" class="btn btn-link px-0 mb-3">&larr; Back to users</a>
+  <a href="/admin/users" class="btn btn-primary btn-sm">&larr; Back to users</a>
 
   <h1 class="h3 mb-4">Edit: <%= row.name %></h1>
 
-  <form method="post" action="/admin/users/<%= row.id %>" class="row g-4">
+  <form method="post" action="/admin/users/<%= row.id %>/edit" class="row g-4">
     <div class="col-md-8">
       <div class="mb-3">
         <label class="form-label">Name *</label>
@@ -57,8 +57,16 @@
         </select>
       </div>
 
-      <div class="alert alert-secondary small">
-        Password isn’t editable here. Add a “reset password” flow if needed.
+      <div class="mb-3">
+        <label for="password" class="form-label">New password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-control"
+          autocomplete="new-password"
+          placeholder="Leave blank to keep current password">
+        <div class="form-text">Leave blank to keep the current password (min 8 characters).</div>
       </div>
     </div>
   </form>

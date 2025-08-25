@@ -2,7 +2,8 @@
   "name": "app",
   "version": "0.0.0",
   "private": true,
-  "scripts": {
+"scripts": {
+    "dev": "nodemon ./bin/www",
     "start": "node ./bin/www"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "nodemon": "^3.1.0",
     "numeral": "^2.0.6",
     "pg": "^8.13.1",
+    "socket.io": "^4.8.1",
     "stripe": "^17.2.1"
   }
 }

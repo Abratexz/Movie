@@ -5,13 +5,17 @@
     <!-- LEFT: Mock Payment -->
     <div class="col-lg-8">
       <div class="card bg-dark border border-danger-subtle">
-        <div class="card-header text-white fw-semibold">
+        <div class="card-header text-white fw-semibold d-flex justify-content-between align-items-center">
           Mock Payment
+          <div>
+            <% if (booking.can_pay) { %>
+              <span>Time left: <span id="js-left" class="text-danger" data-sec="<%= booking.remaining_seconds %>">--:--</span></span>
+            <% } %>
+          </div>
         </div>
         <div class="card-body text-white">
-          <form action="/booking/confirm" method="POST">
-            <input type="hidden" name="showtime_id" value="<%= booking.showtime_id %>">
-            <input type="hidden" name="seats" value="<%= booking.seats.join(',') %>">
+          <form action="/payment/confirm" method="POST">
+            <input type="hidden" name="order_id" value="<%= booking.order_id %>">
 
             <div class="mb-3">
               <label class="form-label">Cardholder Name</label>
@@ -49,12 +53,11 @@
         <div class="card-header bg-transparent text-white-50">Summary</div>
         <div class="card-body">
           <div class="d-flex gap-3 mb-3">
-             <!-- ดึง poster จาก database -->
-<img src="/images/<%= movie.poster_url %>" 
-     alt="<%= movie.title %>" 
-     class="rounded shadow-sm" 
-     style="width:120px; height:180px; object-fit:cover; border:1px solid #444;">
-     
+            <img src="/images/<%= movie.poster_url %>"
+                 alt="<%= movie.title %>"
+                 class="rounded shadow-sm"
+                 style="width:120px; height:180px; object-fit:cover; border:1px solid #444;">
+            <div>
               <div class="fw-semibold text-white"><%= movie.title %></div>
               <div class="small text-white-50"><%= movie.rating || 'NR' %> • <%= movie.duration_min %> mins</div>
             </div>
@@ -84,5 +87,49 @@
     </div>
   </div>
 </div>
+
+<script>
+(() => {
+  /* -------- countdown -------- */
+  const leftEl = document.getElementById('js-left');
+  const form   = document.querySelector('form');
+  const payBtn = form?.querySelector('button[type="submit"]');
+
+  if (leftEl) {
+    let s = Number(leftEl.dataset.sec || 0);
+    function fmt(x){ x = Math.max(0, x|0); const m = Math.floor(x/60), ss = x % 60; return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0'); }
+    leftEl.textContent = fmt(s);
+    const t = setInterval(() => {
+      s -= 1;
+      leftEl.textContent = fmt(s);
+      if (s <= 0) { clearInterval(t); if (payBtn) payBtn.disabled = true; leftEl.textContent = 'Expired'; }
+    }, 1000);
+  }
+
+  /* -------- Visa Card Validation + formatting -------- */
+  if (form) {
+    const cardNumberInput = form.querySelector('input[name="card_number"]');
+    const hint = form.querySelector('.form-text');
+
+    form.addEventListener('submit', (e) => {
+      if (!cardNumberInput) return;
+      const cardNumber = cardNumberInput.value.replace(/\s+/g, '');
+      const visaRegex = /^4[0-9]{12}(?:[0-9]{3})?$/; // Visa: 13 or 16 digits starting with 4
+      if (!visaRegex.test(cardNumber)) {
+        e.preventDefault();
+        if (hint) { hint.textContent = 'Invalid Visa card number'; hint.classList.add('text-danger'); }
+        cardNumberInput.focus();
+        return false;
+      }
+      if (hint) { hint.textContent = '* ใช้เลขการ์ดใด ๆ ได้เพราะเป็น mock'; hint.classList.remove('text-danger'); }
+    });
+
+    cardNumberInput?.addEventListener('input', (e) => {
+      let value = e.target.value.replace(/\D/g, '').substring(0, 16); // max 16 digits
+      e.target.value = value.match(/.{1,4}/g)?.join(' ') || '';
+    });
+  }
+})();
+</script>
 
 <%- include('../partials/footer') %>

@@ -6,6 +6,7 @@
   <title><%= title || "MovieTicket" %></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     body {
       background-color: #111;
@@ -39,7 +40,7 @@
         <ul class="navbar-nav ms-auto">
           <% if (user) { %>
             <li class="nav-item"><a class="nav-link" href="/favorites"><i class="bi bi-heart"></i> Favorites</a></li>
-            <li class="nav-item"><a class="nav-link" href="/bookings">My Tickets</a></li>
+            <li class="nav-item"><a class="nav-link" href="/my-tickets">My Tickets</a></li>
             <% if (user && user.role === 'admin') { %>
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button"
@@ -52,6 +53,7 @@
                   <li><a class="dropdown-item" href="/admin/movies">Movies</a></li>
                   <li><a class="dropdown-item" href="/admin/genres">Genres</a></li>
                   <li><a class="dropdown-item" href="/admin/showtimes">Showtimes</a></li>
+                  <li><a class="dropdown-item" href="/admin/tickets">Tickets</a></li>
                 </ul>
               </li>
             <% } %>
@@ -65,10 +67,4 @@
     </div>
   </nav>
   <main class="container py-4 flex-fill">
-    <!-- Flash messages -->
-    <% if (locals.flash && flash.error && flash.error.length) { %>
-      <div class="alert alert-danger"><%= flash.error.join('<br>') %></div>
-    <% } %>
-    <% if (locals.flash && flash.success && flash.success.length) { %>
-      <div class="alert alert-success"><%= flash.success.join('<br>') %></div>
-    <% } %>
+

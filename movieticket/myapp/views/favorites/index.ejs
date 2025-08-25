@@ -1,0 +1,72 @@
+<%- include('../partials/header', { title, user }) %>
+
+<style>
+  /* uniform poster size: 2:3 ratio, fill & crop */
+  .poster-wrap{ position:relative; width:100%; aspect-ratio:2/3; background:#222; }
+  .poster-wrap img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  /* (optional) if some older browsers lack aspect-ratio, keep a minimum height */
+  @supports not (aspect-ratio: 2/3){
+    .poster-wrap{ height: 270px; } /* fallback */
+  }
+</style>
+
+<div class="container my-5">
+  <h1 class="h3 mb-4">My Favorite Movies</h1>
+
+  <% const list = Array.isArray(movies) ? movies : []; %>
+  <% if (list.length === 0) { %>
+    <div class="text-muted">No favorites yet. Go add some ♥</div>
+  <% } else { %>
+    <div class="row g-4">
+      <% list.forEach(m => { %>
+        <div class="col-6 col-md-3 col-lg-2">
+          <div class="card bg-dark h-100">
+            <div class="poster-wrap">
+              <img
+                src="/images/<%= m.poster_url || 'posters/default.png' %>"
+                alt="<%= m.title %> poster"
+                onerror="this.onerror=null;this.src='/images/posters/default.png';"
+              >
+            </div>
+            <div class="card-body p-2">
+              <div class="fw-semibold text-white"><%= m.title || 'Untitled' %></div>
+              <div class="text-white-50 small">
+                <%= m.duration_min ? m.duration_min + ' min' : '' %>
+              </div>
+            </div>
+            <div class="card-footer p-2 d-flex justify-content-between align-items-center">
+              <a href="/movies/<%= m.id %>/showtimes" class="btn btn-sm btn-outline-light">Showtimes</a>
+              <button class="btn btn-sm btn-link p-0 favorite-button" data-movie-id="<%= m.id %>" aria-label="Toggle favorite">
+                <i class="fas fa-heart text-danger"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<script>
+  // Optional: allow unfavorite directly from list
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.favorite-button');
+    if (!btn) return;
+    const movieId = btn.dataset.movieId;
+    const icon = btn.querySelector('i');
+    try {
+      const resp = await fetch(`/favorites/${movieId}/toggle`, { method: 'POST' });
+      const data = await resp.json();
+      if (data.ok) {
+        if (data.favorited) {
+          icon.classList.remove('far'); icon.classList.add('fas');
+        } else {
+          const card = btn.closest('.col-6, .col-md-3, .col-lg-2');
+          if (card) card.remove();
+        }
+      }
+    } catch {}
+  });
+</script>
+
+<%- include('../partials/footer') %>

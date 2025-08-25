@@ -1,16 +1,13 @@
 // routes/favorites.js
 const express = require('express');
 const router = express.Router();
+const { requireAuth } = require('../middleware/auth');
+const favoriteCtl = require('../controllers/favoriteController');
 
-// Favorites page
-router.get('/', (req, res) => {
-  res.render('favorites/index', { title: 'My Favorite Movies' });
-});
+router.use(requireAuth);
 
-router.post('/add', (req, res) => {
-  const { movieId } = req.body;
-  console.log('Add favorite:', movieId);
-  res.redirect('/favorites');
-});
+router.get('/', favoriteCtl.index);
+router.post('/:movieId/toggle', favoriteCtl.toggle);
+router.get('/:movieId/check', favoriteCtl.check); // optional
 
 module.exports = router;

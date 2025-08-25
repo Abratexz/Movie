@@ -1,5 +1,5 @@
 <%- include('../../partials/header', { title, user }) %>
-
+<%- include('../../partials/message') %>
 <% function fmtLocal(dt){
     const d = (dt instanceof Date) ? dt : new Date(dt);
     const p = n => n<10 ? '0'+n : n;
@@ -62,7 +62,7 @@
                 <div class="d-inline-flex align-items-center justify-content-end gap-2 flex-nowrap">
                   <a href="/admin/showtimes/<%= st.id %>/seats" class="btn btn-sm btn-outline-info">Seats</a>
                   <a href="/admin/showtimes/<%= st.id %>/edit"  class="btn btn-sm btn-outline-light">Edit</a>
-                  <form method="POST" action="/admin/showtimes/<%= st.id %>/delete" class="m-0 p-0 d-inline">
+                  <form method="POST" action="/admin/showtimes/<%= st.id %>/delete" class="m-0 p-0 d-inline" onsubmit="return confirm('Delete this showtime?')">
                     <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                   </form>
                 </div>

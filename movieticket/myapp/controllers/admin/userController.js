@@ -71,11 +71,19 @@ exports.editForm = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const id = req.params.id;
-    const { name, email, phone, role } = req.body;
-    await pool.query(
-      'UPDATE users SET name=?, email=?, phone=?, role=? WHERE id=?',
-      [name, email, phone || null, role, id]
-    );
+    const { name, email, phone, role , password } = req.body;
+
+    if (password && password.trim().length > 0) {
+      sql = 'UPDATE users SET name=?, email=?, phone=?, role=?, password=? WHERE id=?';
+      params = [name, email, phone, role, password, id];
+    } else {
+      sql = 'UPDATE users SET name=?, email=?, phone=?, role=? WHERE id=?';
+      params = [name, email, phone, role, id];
+    }
+
+    await pool.query(sql, params);
+
+    req.flash('success', 'User updated.');
     res.redirect('/admin/users');
   } catch (e) { next(e); }
 };

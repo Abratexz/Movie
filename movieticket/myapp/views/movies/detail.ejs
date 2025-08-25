@@ -7,38 +7,31 @@
   .seat-btn i{ font-size:16px; line-height:1; }
   #seat-wrap .card-body{ padding:16px 20px; }
 
-
-  .seat-row{
-    display:grid;
-    grid-template-columns: 28px 1fr 28px; 
-    column-gap: 8px;
-    align-items:center;
-    margin-bottom:10px;
-    width:100%;
-  }
-
-  .seat-row .row-label{
-    text-align:center;
-    color:#9ca3af;
-    font-weight:600;
-    user-select:none;
-  }
-
-  .seat-row-grid{
-    display:grid;
-    gap:8px;
-    width:100%;
-  }
-
+  .seat-row{ display:grid; grid-template-columns: 28px 1fr 28px; column-gap: 8px; align-items:center; margin-bottom:10px; width:100%; }
+  .seat-row .row-label{ text-align:center; color:#9ca3af; font-weight:600; user-select:none; }
+  .seat-row-grid{ display:grid; gap:8px; width:100%; }
   .aisle-gap{ width:24px; }
 
   .seat-btn{
-    width:100%;
-    aspect-ratio:1/1;               
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
+    width:100%; aspect-ratio:1/1;
+    display:inline-flex; align-items:center; justify-content:center;
   }
+
+  /* Favorite overlay (match home look) */
+  .favorite-button {
+    position: absolute;
+    top: 15px; right: 15px;
+    width: 40px; height: 40px;
+    background: rgba(0,0,0,.7);
+    border: 2px solid #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px;
+    transition: all .3s ease; cursor: pointer; z-index: 3;
+  }
+  .favorite-button:hover { background: rgba(220,53,69,.8); color: #fff; }
+
+  @keyframes heartPop { 0% { transform: scale(.9);} 50% { transform: scale(1.2);} 100% { transform: scale(1);} }
+  .favorite-button i.heart-pop { animation: heartPop 250ms ease; }
 </style>
 
 <% const hasTheaters = Array.isArray(theaters) && theaters.length > 0; %>
@@ -53,9 +46,19 @@
     <div class="container">
       <div class="row g-4 align-items-center">
         <div class="col-12 col-md-3 text-center">
-          <img src="/images/<%= movie.poster_url %>" alt="<%= movie.title %>"
-               class="img-fluid rounded border border-3 border-danger-subtle shadow-lg"
-               style="max-height: 420px; object-fit: cover;">
+          <!-- Poster + Favorite overlay -->
+          <div class="position-relative d-inline-block">
+            <button type="button"
+                    class="favorite-button"
+                    data-movie-id="<%= movie.id %>"
+                    aria-label="<%= isFavorite ? 'Remove from favorites' : 'Add to favorites' %>">
+              <i class="<%= isFavorite ? 'fas' : 'far' %> fa-heart"></i>
+            </button>
+
+            <img src="/images/<%= movie.poster_url %>" alt="<%= movie.title %>"
+                 class="img-fluid rounded border border-3 border-danger-subtle shadow-lg"
+                 style="max-height: 420px; object-fit: cover;">
+          </div>
         </div>
         <div class="col-12 col-md-9 text-white">
           <h1 class="display-6 fw-bold mb-2"><%= movie.title %></h1>
@@ -130,7 +133,6 @@
       </div>
     </div>
 
-
     <div class="col-lg-4">
       <div class="position-sticky" style="top: 90px;">
         <div class="card bg-dark border border-secondary">
@@ -172,19 +174,16 @@
 </div>
 
 <script>
-
   const theaters      = <%- JSON.stringify(theaters || []) %>;
   const dataByTheater = <%- JSON.stringify(dataByTheater || {}) %>;
 
-  // --- State ---
   let theaterId   = theaters.length ? String(theaters[0].id) : '';
   let selectedDate = '';
-  let selectedShowtime = null; // {id,time,date,theaterName,price,currency}
-  let seatLayout  = null;      // {rows:[{row,count}], aisles:[...]}
-  let seatMap     = new Map(); // code -> {status, class}
+  let selectedShowtime = null;
+  let seatLayout  = null;
+  let seatMap     = new Map();
   let selectedSeats = new Set();
 
-  // --- Els ---
   const theaterSel = document.getElementById('theater-select');
   const pills      = document.getElementById('date-pills');
   const timesWrap  = document.getElementById('times-wrap');
@@ -211,7 +210,6 @@
     checkoutBtn.disabled   = !(selectedShowtime && arr.length);
   }
 
-  // --- Render dates ---
   function renderDates(){
     const map = dataByTheater[theaterId] || {};
     const dates = Object.keys(map).sort();
@@ -241,7 +239,6 @@
     renderTimes();
   }
 
-  // --- Render times ---
   function renderTimes(){
     const map  = dataByTheater[theaterId] || {};
     const list = map[selectedDate] || [];
@@ -277,11 +274,9 @@
     timesWrap.innerHTML = grid;
   }
 
-  // --- Select showtime (highlight selected) + load seats ---
   async function onPickShowtime(btn){
-    // highlight
     document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('btn-danger','active'));
-    btn.classList.add('btn-danger','active'); // visibly selected
+    btn.classList.add('btn-danger','active');
 
     const theaterName = theaters.find(t=>String(t.id)===String(theaterId))?.name || '';
     selectedShowtime = {
@@ -309,73 +304,90 @@
   }
   window.onPickShowtime = onPickShowtime;
 
-  // --- Draw seat grid (icon only) ---
   function renderSeatGrid(layout, map){
-    const rows   = Array.isArray(layout.rows) ? layout.rows : [];
-    const aisles = Array.isArray(layout.aisles) ? layout.aisles : [];
+  
+  const rows   = Array.isArray(layout.rows) ? layout.rows : [];
+  const aisles = Array.isArray(layout.aisles) ? layout.aisles : [];
 
-    seatGrid.innerHTML = '';
+  seatGrid.innerHTML = '';
 
-    rows.forEach(r => {
-      const rowLabel = String(r.row || '').toUpperCase();
-      const cnt      = Number(r.count || 0);
+  rows.forEach(r => {
+    const rowLabel = String(r.row || '').toUpperCase();
+    const cnt      = Number(r.count || 0);
 
-      const rowEl = document.createElement('div');
-      rowEl.className = 'seat-row';
+    const rowEl = document.createElement('div');
+    rowEl.className = 'seat-row';
 
-      // left label
-      const left = document.createElement('div');
-      left.className = 'row-label';
-      left.textContent = rowLabel;
+    // left label
+    const left = document.createElement('div');
+    left.className = 'row-label';
+    left.textContent = rowLabel;
 
-      // seats grid in the middle
-      const grid = document.createElement('div');
-      grid.className = 'seat-row-grid';
+    // seats grid in the middle
+    const grid = document.createElement('div');
+    grid.className = 'seat-row-grid';
 
-      // total columns = seats + aisles (empty spacers)
-      grid.style.gridTemplateColumns = `repeat(${cnt + aisles.length}, minmax(34px, 1fr))`;
+    grid.style.gridTemplateColumns = `repeat(${cnt + aisles.length}, minmax(34px, 1fr))`;
 
-      for (let i = 1; i <= cnt; i++) {
-        if (aisles.includes(i)) {
-          const spacer = document.createElement('div');
-          spacer.className = 'aisle-gap';
-          grid.appendChild(spacer);
-        }
-
-        const code  = `${rowLabel}${i}`;
-        const state = map.get(code)?.status || 'available';
-
-        const btn = document.createElement('button');
-        btn.type  = 'button';
-        btn.className = seatBtnClass(state, false) + ' seat-btn';
-        btn.innerHTML = '<i class="fas fa-chair"></i>';
-        btn.dataset.code = code;
-        btn.disabled = (state === 'booked');
-        btn.title = code;
-        btn.onclick = () => toggleSeat(btn);
-
-        grid.appendChild(btn);
+    for (let i = 1; i <= cnt; i++) {
+      if (aisles.includes(i)) {
+        const spacer = document.createElement('div');
+        spacer.className = 'aisle-gap';
+        grid.appendChild(spacer);
       }
 
-      // right label
-      const right = document.createElement('div');
-      right.className = 'row-label';
-      right.textContent = rowLabel;
+      const code  = `${rowLabel}${i}`;
+      const seat  = map.get(code);
+      const state = seat?.status || 'available';
+      const isLocked = (state === 'locked' || state === 'booked'); // locked จาก order
 
-      // assemble row: [label][grid][label]
-      rowEl.appendChild(left);
-      rowEl.appendChild(grid);
-      rowEl.appendChild(right);
+      const btn = document.createElement('button');
+      btn.type  = 'button';
+      btn.className = seatBtnClass(state, false);
+      btn.innerHTML = '<i class="fas fa-chair"></i>';
+      btn.dataset.code = code;
+      btn.disabled = isLocked; // ถ้า locked หรือ booked ห้ามคลิก
+      btn.title = code;
+      btn.onclick = () => toggleSeat(btn);
 
-      seatGrid.appendChild(rowEl);
-    });
+      grid.appendChild(btn);
+    }
+
+    // right label
+    const right = document.createElement('div');
+    right.className = 'row-label';
+    right.textContent = rowLabel;
+
+    rowEl.appendChild(left);
+    rowEl.appendChild(grid);
+    rowEl.appendChild(right);
+
+    seatGrid.appendChild(rowEl);
+  });
+}
+
+function seatBtnClass(status, selected){
+  if (selected) return 'btn btn-success seat-btn';
+  if (status === 'available') return 'btn btn-outline-success seat-btn';
+  return 'btn btn-secondary seat-btn'; // locked หรือ booked
+}
+
+function toggleSeat(btn){
+  if (btn.disabled) return; // ป้องกันเผลอคลิก
+  const code = btn.dataset.code;
+  if (selectedSeats.has(code)) {
+    selectedSeats.delete(code);
+    btn.className = 'btn btn-outline-success seat-btn';
+  } else {
+    selectedSeats.add(code);
+    btn.className = 'btn btn-success seat-btn';
+
   }
+  btn.innerHTML = '<i class="fas fa-chair"></i>';
+  updateSummary();
+}
 
-  function seatBtnClass(status, selected){
-    if (selected) return 'btn btn-success';
-    if (status === 'available') return 'btn btn-outline-success';
-    return 'btn btn-secondary'; // booked
-  }
+
 
   function toggleSeat(btn){
     const code = btn.dataset.code;
@@ -390,30 +402,107 @@
     updateSummary();
   }
 
-  // --- Proceed ---
-  checkoutBtn?.addEventListener('click', () => {
-    const seats = [...selectedSeats];
-    if (!selectedShowtime || seats.length === 0) return;
-    const params = new URLSearchParams({
-      showtime: selectedShowtime.id,
-      seats: seats.join(',')
-    });
-    // send to your booking flow
-    window.location.href = `/payment/seats?${params.toString()}`;
+async function lockSelectedSeats() {
+  const seats = [...selectedSeats];
+  if (!selectedShowtime || seats.length === 0) return;
+
+  const res = await fetch('/api/orders/lock-seats', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: YOUR_USER_ID,        // จาก session หรือ LIFF
+      showtime_id: selectedShowtime.id,
+      seats
+    })
   });
+
+  const data = await res.json();
+  if (!data.success) {
+    alert(data.message || 'Failed to lock seats');
+    // รีเฟรช seat grid
+    onPickShowtime(document.querySelector(`.time-btn[data-id="${selectedShowtime.id}"]`));
+  } else {
+    console.log('Seats locked:', data.lockedSeats);
+  }
+}
+
+  // --- Proceed ---
+  checkoutBtn?.addEventListener('click', async () => {
+  const seats = [...selectedSeats];
+  if (!selectedShowtime || seats.length === 0) return;
+
+  try {
+    const resp = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body: JSON.stringify({ showtime_id: Number(selectedShowtime.id), seats })
+    });
+
+    if (resp.status === 401) {
+      const next = encodeURIComponent(location.pathname + location.search);
+      return (window.location.href = `/auth/login?next=${next}`);
+    }
+
+    const data = await resp.json();
+    if (!data.ok) {
+      const msg = data.error === 'SEAT_TAKEN'
+        ? 'Some seats just got taken. Please re-select.'
+        : (data.error || 'Cannot create order.');
+      alert(msg);
+      // refresh seat grid
+      const activeBtn = document.querySelector(`.time-btn[data-id="${selectedShowtime.id}"]`);
+      if (activeBtn) onPickShowtime(activeBtn);
+      return;
+    }
+
+    // redirect to payment page with order_id
+    window.location.href = data.pay_url || `/payment?order_id=${data.order_id}`;
+  } catch (e) {
+    console.error(e);
+    alert('Server error.');
+  }
+});
 
   theaterSel?.addEventListener('change', (e) => {
     theaterId = String(e.target.value);
-    selectedShowtime = null;
-    selectedSeats.clear();
-    setStep2(false);
-    seatWrap.classList.add('d-none'); screenBar.classList.add('d-none');
-    updateSummary();
-    renderDates();
+    selectedShowtime = null; selectedSeats.clear();
+    setStep2(false); seatWrap.classList.add('d-none'); screenBar.classList.add('d-none');
+    updateSummary(); renderDates();
   });
 
   document.addEventListener('DOMContentLoaded', () => {
     if (<%= hasTheaters ? 'true' : 'false' %>) renderDates();
+  });
+
+  // Favorite AJAX + animation (same as home)
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.favorite-button');
+    if (!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const icon = btn.querySelector('i');
+    const movieId = btn.dataset.movieId;
+
+    try {
+      const resp = await fetch(`/favorites/${movieId}/toggle`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+
+      if (resp.status === 401) {
+        const next = encodeURIComponent(location.pathname + location.search);
+        return (window.location.href = `/auth/login?next=${next}`);
+      }
+
+      const data = await resp.json();
+      if (data.ok) {
+        icon.classList.toggle('fas', data.favorited);
+        icon.classList.toggle('far', !data.favorited);
+        icon.classList.remove('heart-pop'); void icon.offsetWidth; icon.classList.add('heart-pop');
+      }
+    } catch (err) { console.error(err); }
   });
 </script>
 

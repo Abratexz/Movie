@@ -1,43 +1,255 @@
 <%- include('../../partials/header', { title, user }) %>
 
+<style>
+  :root{
+    --bg:#0c0c0d; --panel:#1b1f23; --ink:#e9e9ee;
+    --line:#2a2f36;
+    --ok:#1e5f3f; --ok-outline:#3aa773;
+    --warn:#6a4d00; --warn-outline:#d49b00;
+    --bad:#6b1b1b; --bad-outline:#e45454;
+    --sel:#0aa4ff;
+  }
+  .screen-box{background:#161a1e;border:1px solid var(--line);border-radius:16px;padding:20px}
+  .screen-label{opacity:.8;letter-spacing:.25em;text-align:center;margin-bottom:14px}
+
+  /* container for seat rows */
+  .grid{display:grid;gap:10px;justify-content:center}
+  /* IMPORTANT: avoid Bootstrap .row conflict */
+  .seat-row{display:flex;gap:10px;justify-content:center}
+
+  .seat{
+    width:44px;               /* fixed square like your screenshot */
+    height:44px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#20262c;
+    color:#dfe7ef;
+    font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer; user-select:none;
+    transition:transform .05s ease-in-out, box-shadow .05s ease-in-out, background .05s;
+  }
+  .seat:hover{transform:translateY(-1px)}
+  .seat.status-available{background:var(--ok);border-color:var(--ok-outline)}
+  .seat.status-locked{background:#3b2a00;border-color:var(--warn-outline)}
+  .seat.status-booked{background:var(--bad);border-color:var(--bad-outline)}
+  .seat.selected{outline:2px solid var(--sel); box-shadow:0 0 0 2px rgba(10,164,255,.25) inset}
+
+  .legend .pill{padding:4px 10px;border-radius:999px;font-size:12px}
+  .pill.ok{background:#e8fff1;color:#0f8a3c}
+  .pill.warn{background:#fff7e6;color:#a86700}
+  .pill.bad{background:#ffefef;color:#b42318}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .toolbar .btn{border:1px solid var(--line);background:#1f242a;color:#e8eef6;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
+  .toolbar .btn:hover{background:#232a31}
+  .toolbar .ok{border-color:var(--ok-outline)}
+  .toolbar .warn{border-color:var(--warn-outline)}
+  .toolbar .bad{border-color:var(--bad-outline)}
+
+  .muted{color:#aab4be}
+</style>
+
 <div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h5 mb-0"><%= st.title %> — <%= st.screen_name %> <span>#<%= st.id %></span></h1>
-    <a class="btn btn-outline-secondary" href="/admin/showtimes">Back</a>
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0"><%= st.title %> — <%= st.screen_name %></h1>
+    <a href="/admin/showtimes" class="btn btn-primary btn-sm">Back</a>
   </div>
 
-  <div class="text-white-50 mb-2">
-    <strong><%= new Date(st.start_utc).toLocaleString() %></strong>
-    · <%= st.format || '2D' %> · <%= st.language || '-' %>
+  <div class="d-flex align-items-center gap-3 mb-3 legend">
+    <span class="pill ok">Available</span>
+    <span class="pill warn">Locked</span>
+    <span class="pill bad">Booked</span>
+    <span class="ms-auto muted">Selected: <span id="selCount">0</span></span>
   </div>
 
-  <div class="mb-3 small">
-    <span class="badge bg-success">Available</span>
-    <span class="badge bg-danger">Booked</span>
-  </div>
+  <div class="card p-3" style="background:#121519;border:1px solid var(--line);border-radius:14px">
+    <div class="toolbar mb-3">
+      <button id="btnSelectAll" class="btn">Select all</button>
+      <button id="btnInvert" class="btn">Invert</button>
+      <button id="btnClear" class="btn">Clear</button>
 
-  <% if (!grid || grid.length === 0) { %>
-    <div class="alert alert-dark">No seat map to display.</div>
-  <% } else { %>
-    <div class="p-3 bg-dark rounded-3 shadow-sm" style="overflow:auto">
-      <div class="text-center text-white-50 mb-2">SCREEN</div>
-      <div class="d-flex flex-column gap-2 align-items-center">
+      <span class="muted" style="margin-left:8px">• Apply scope:</span>
+      <label style="display:flex;align-items:center;gap:6px" class="muted">
+        <input type="checkbox" id="chkAllScope"> All seats
+      </label>
+
+      <span style="flex:1"></span>
+
+      <button class="btn ok"   data-apply="available">Set Available</button>
+      <button class="btn warn" data-apply="locked">Set Locked</button>
+      <button class="btn bad"  data-apply="booked">Set Booked</button>
+    </div>
+
+    <div class="screen-box">
+      <div class="screen-label muted">SCREEN</div>
+      <div class="grid">
         <% grid.forEach(row => { %>
-          <div class="d-flex gap-1">
-            <% row.forEach(seat => {
-                 const booked = (seat.status || '').toLowerCase() === 'booked';
-                 const cls = booked ? 'btn-danger' : 'btn-success';
-            %>
-              <button type="button" class="btn btn-sm <%= cls %>" disabled
-                      title="<%= seat.label %> • <%= booked ? 'booked' : 'available' %>">
-                <%= seat.label %>
-              </button>
+          <div class="seat-row">
+            <% row.forEach(cell => { %>
+              <div class="seat status-<%= cell.status %>" data-label="<%= cell.label %>" data-status="<%= cell.status %>"><%= cell.label %></div>
             <% }) %>
           </div>
         <% }) %>
       </div>
     </div>
-  <% } %>
+  </div>
 </div>
 
+<script>
+  (() => {
+    const showtimeId = <%= st.id %>;
+    const POLL_MS = 2500;
+  
+    const $count = document.getElementById('selCount');
+    const selected = new Set();
+  
+    // cache all seat elements and index by code
+    const seatEls = Array.from(document.querySelectorAll('.seat'));
+    const byCode = new Map(seatEls.map(el => [el.dataset.label, el]));
+  
+    /* ---------- helpers ---------- */
+    function setSeatStatus(el, status) {
+      el.classList.remove('status-available','status-locked','status-booked');
+      el.classList.add('status-' + status);
+      el.dataset.status = status;
+    }
+    function updateCount() { $count.textContent = selected.size; }
+  
+    // apply a change locally (either selected list or all)
+    function applyLocal(status, scope, seatsList) {
+      if (scope === 'all') {
+        seatEls.forEach(el => setSeatStatus(el, status));
+      } else {
+        (seatsList || []).forEach(code => {
+          const el = byCode.get(code);
+          if (el) setSeatStatus(el, status);
+        });
+      }
+      // clear current selection after applying
+      seatEls.forEach(el => el.classList.remove('selected'));
+      selected.clear();
+      updateCount();
+    }
+  
+    /* ---------- selection UI ---------- */
+    seatEls.forEach(el => {
+      el.addEventListener('click', () => {
+        const code = el.dataset.label;
+        if (selected.has(code)) {
+          selected.delete(code);
+          el.classList.remove('selected');
+        } else {
+          selected.add(code);
+          el.classList.add('selected');
+        }
+        updateCount();
+      });
+    });
+  
+    document.getElementById('btnSelectAll').addEventListener('click', () => {
+      seatEls.forEach(el => { selected.add(el.dataset.label); el.classList.add('selected'); });
+      updateCount();
+    });
+  
+    document.getElementById('btnClear').addEventListener('click', () => {
+      seatEls.forEach(el => el.classList.remove('selected'));
+      selected.clear();
+      updateCount();
+    });
+  
+    document.getElementById('btnInvert').addEventListener('click', () => {
+      seatEls.forEach(el => {
+        const code = el.dataset.label;
+        if (selected.has(code)) {
+          selected.delete(code);
+          el.classList.remove('selected');
+        } else {
+          selected.add(code);
+          el.classList.add('selected');
+        }
+      });
+      updateCount();
+    });
+  
+    /* ---------- apply buttons (POST) ---------- */
+    document.querySelectorAll('[data-apply]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const status = btn.dataset.apply;
+        const allScope = document.getElementById('chkAllScope').checked;
+        const scope = allScope ? 'all' : 'selected';
+        const seatsList = Array.from(selected);
+  
+        if (scope === 'selected' && seatsList.length === 0) {
+          alert('Select at least one seat, or tick "All seats".');
+          return;
+        }
+  
+        btn.disabled = true;
+        try {
+          const res = await fetch(`/admin/showtimes/${showtimeId}/seats/reset`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ status, scope, seats: seatsList })
+          });
+  
+          const ct = (res.headers.get('content-type') || '');
+          const data = ct.includes('application/json') ? await res.json() : { ok:false, error: await res.text() };
+          if (!res.ok || !data.ok) throw new Error(data.error || 'Request failed');
+  
+          // immediate local update
+          applyLocal(status, scope, seatsList);
+        } catch (e) {
+          alert('Failed to update seats: ' + e.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+  
+    /* ---------- polling for near real-time sync ---------- */
+    let pollTimer = null;
+  
+    async function fetchSnapshot() {
+      try {
+        const res = await fetch(`/admin/showtimes/${showtimeId}/seats.json`, {
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store'
+        });
+        if (!res.ok) return; // ignore
+        const data = await res.json();
+        if (!data.ok || !data.seats) return;
+  
+        // apply only changed statuses (preserve selection highlights)
+        for (const [code, status] of Object.entries(data.seats)) {
+          const el = byCode.get(code);
+          if (el && el.dataset.status !== status) {
+            setSeatStatus(el, status);
+          }
+        }
+      } catch (_) {
+        // ignore; next interval will retry
+      }
+    }
+  
+    function startPolling() {
+      stopPolling();
+      pollTimer = setInterval(fetchSnapshot, POLL_MS);
+    }
+    function stopPolling() {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+  
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopPolling();
+      else { fetchSnapshot(); startPolling(); }
+    });
+  
+    // kick off
+    fetchSnapshot();
+    startPolling();
+  })();
+  </script>
+  
 <%- include('../../partials/footer') %>

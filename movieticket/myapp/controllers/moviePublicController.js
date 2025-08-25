@@ -14,67 +14,43 @@ const shapeMovie = row => shapeMovies([row])[0];
 /* ===================== LIST PAGES ===================== */
 
 exports.nowShowing = async (req, res) => {
-  try {
-    const [rows] = await pool.query(
-      `SELECT
-         m.id,
-         m.title,
-         m.duration_min,
-         m.release_date,
-         m.poster_url,
-         '' AS genres         
+  const uid = req.session.user?.id || 0;
+  const [rows] = await pool.query(
+    `SELECT m.id, m.title, m.duration_min, m.release_date, m.poster_url,
+            CASE WHEN f.user_id IS NULL THEN 0 ELSE 1 END AS is_favorite
        FROM movies m
-       WHERE m.release_date IS NULL OR m.release_date <= CURDATE()
-       ORDER BY m.release_date DESC, m.id DESC`
-    );
-
-    res.render('movies/home', {
-      title: 'Now Showing',
-      category: 'now',
-      user: req.session.user || null,
-      movies: shapeMovies(rows),
-    });
-  } catch (err) {
-    console.error(err);
-    res.render('movies/home', {
-      title: 'Now Showing',
-      category: 'now',
-      user: req.session.user || null,
-      movies: [],
-    });
-  }
+       LEFT JOIN favorite_movies f
+         ON f.movie_id = m.id AND f.user_id = ?
+      WHERE m.release_date IS NULL OR m.release_date <= CURDATE()
+      ORDER BY m.release_date DESC, m.id DESC`,
+    [uid]
+  );
+  res.render('movies/home', {
+    title: 'Now Showing',
+    category: 'now',
+    user: req.session.user || null,
+    movies: rows
+  });
 };
 
 exports.comingSoon = async (req, res) => {
-  try {
-    const [rows] = await pool.query(
-      `SELECT
-         m.id,
-         m.title,
-         m.duration_min,
-         m.release_date,
-         m.poster_url,
-         '' AS genres
+  const uid = req.session.user?.id || 0;
+  const [rows] = await pool.query(
+    `SELECT m.id, m.title, m.duration_min, m.release_date, m.poster_url,
+            CASE WHEN f.user_id IS NULL THEN 0 ELSE 1 END AS is_favorite
        FROM movies m
-       WHERE m.release_date IS NOT NULL AND m.release_date > CURDATE()
-       ORDER BY m.release_date ASC, m.id DESC`
-    );
-
-    res.render('movies/home', {
-      title: 'Coming Soon',
-      category: 'coming',
-      user: req.session.user || null,
-      movies: shapeMovies(rows),
-    });
-  } catch (err) {
-    console.error(err);
-    res.render('movies/home', {
-      title: 'Coming Soon',
-      category: 'coming',
-      user: req.session.user || null,
-      movies: [],
-    });
-  }
+       LEFT JOIN favorite_movies f
+         ON f.movie_id = m.id AND f.user_id = ?
+      WHERE m.release_date IS NOT NULL AND m.release_date > CURDATE()
+      ORDER BY m.release_date ASC, m.id DESC`,
+    [uid]
+  );
+  res.render('movies/home', {
+    title: 'Coming Soon',
+    category: 'coming',
+    user: req.session.user || null,
+    movies: rows
+  });
 };
 
 /* ===================== DETAIL / SHOWTIMES ===================== */
@@ -102,6 +78,16 @@ exports.showtimes = async (req, res, next) => {
       genres: ''
     };
 
+    // NEW: compute isFavorite for the current user
+    let isFavorite = false;
+    if (req.session.user) {
+      const userId = req.session.user.id;
+      const [fav] = await pool.query(
+        'SELECT 1 FROM favorite_movies WHERE user_id=? AND movie_id=? LIMIT 1',
+        [userId, movie.id]
+      );
+      isFavorite = fav.length > 0;
+    }
 
     const [rows] = await pool.query(
       `
@@ -141,7 +127,8 @@ exports.showtimes = async (req, res, next) => {
       user: req.session.user || null,
       movie,
       theaters,
-      dataByTheater
+      dataByTheater,
+      isFavorite
     });
   } catch (err) {
     next(err);
@@ -166,10 +153,10 @@ exports.seatMap = async (req, res, next) => {
               th.name AS theater_name,
               DATE_FORMAT(CONVERT_TZ(st.start_utc,'+00:00','+07:00'), '%Y-%m-%d') AS show_date,
               DATE_FORMAT(CONVERT_TZ(st.start_utc,'+00:00','+07:00'), '%H:%i')   AS show_time
-       FROM showtimes st
-       JOIN screens  s  ON s.id  = st.screen_id
-       JOIN theaters th ON th.id = s.theater_id
-       WHERE st.id = ? LIMIT 1`, [showtimeId]
+         FROM showtimes st
+         JOIN screens  s  ON s.id  = st.screen_id
+         JOIN theaters th ON th.id = s.theater_id
+        WHERE st.id = ? LIMIT 1`, [showtimeId]
     );
     if (!meta) return res.status(404).json({ error: 'Showtime not found' });
 
@@ -199,12 +186,33 @@ exports.seatMap = async (req, res, next) => {
       }
     }
 
-    // fetch seats (only statuses we use are 'available' | 'booked')
+    /* ---- ADD THESE TWO QUERIES: expire timed-out holds BEFORE reading seats ---- */
+    await pool.query(
+      `UPDATE seat_inventory
+          SET status='available', locked_by=NULL, order_id=NULL, hold_expires_at=NULL
+        WHERE showtime_id=? AND status='locked' AND hold_expires_at < NOW()`,
+      [showtimeId]
+    );
+    await pool.query(
+      `UPDATE orders
+          SET status='expired', updated_at=NOW()
+        WHERE showtime_id=? AND status='hold' AND expires_at < NOW()`,
+      [showtimeId]
+    );
+    /* --------------------------------------------------------------------------- */
+
+    // fetch seats (treat as locked only if lock hasn't expired)
     const [seats] = await pool.query(
-      `SELECT seat_code, seat_class, status
-       FROM seat_inventory
-       WHERE showtime_id=?
-       ORDER BY seat_code`, [showtimeId]
+      `SELECT seat_code, seat_class,
+              CASE
+                WHEN status='booked' THEN 'booked'
+                WHEN status='locked' AND hold_expires_at > NOW() THEN 'locked'
+                ELSE 'available'
+              END AS status
+         FROM seat_inventory
+        WHERE showtime_id=?
+        ORDER BY seat_code`,
+      [showtimeId]
     );
 
     // return
@@ -227,3 +235,4 @@ exports.seatMap = async (req, res, next) => {
     });
   } catch (err) { next(err); }
 };
+

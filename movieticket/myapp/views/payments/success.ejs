@@ -1,9 +1,175 @@
 <%- include('../partials/header', { title: 'Payment Success', user }) %>
 
-<div class="container my-5 text-center text-white">
-  <h1 class="mb-3"><i class="fas fa-check-circle text-success"></i> <%= message %></h1>
-  <p>Your booking for Showtime ID <%= booking.showtime_id %> (Seats: <%= booking.seats %>) is confirmed.</p>
-  <a href="/" class="btn btn-primary mt-3">Back to Home</a>
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Success Header -->
+      <div class="text-center mb-4">
+        <div class="mb-3">
+          <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+        </div>
+        <h1 class="text-success mb-2"><%= message %></h1>
+        <p class="text-white-50">Your movie tickets have been booked successfully!</p>
+      </div>
+
+      <!-- Booking Details Card -->
+      <div class="card bg-dark border border-success">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Booking Confirmation</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Movie Info -->
+            <div class="col-md-4 text-center mb-4">
+              <img src="/images/<%= movie.poster_url %>" 
+                   alt="<%= movie.title %>" 
+                   class="img-fluid rounded shadow"
+                   style="max-height: 250px; object-fit: cover; border: 1px solid #444;">
+              <h5 class="text-white mt-3"><%= movie.title %></h5>
+              <p class="text-white-50 small"><%= movie.rating || 'NR' %> • <%= movie.duration_min %> mins</p>
+            </div>
+
+            <!-- Booking Details -->
+            <div class="col-md-8">
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <div class="border border-secondary rounded p-3 h-100">
+                    <div class="small text-success fw-semibold mb-1">PAYMENT ID</div>
+                    <div class="text-white fw-bold">#<%= booking.id.toString().padStart(6, '0') %></div>
+                  </div>
+                </div>
+
+                <div class="col-sm-6">
+                  <div class="border border-secondary rounded p-3 h-100">
+                    <div class="small text-success fw-semibold mb-1">ORDER ID</div>
+                    <div class="text-white fw-bold small"><%= booking.order_id %></div>
+                  </div>
+                </div>
+
+                <div class="col-sm-6">
+                  <div class="border border-secondary rounded p-3 h-100">
+                    <div class="small text-success fw-semibold mb-1">THEATER</div>
+                    <div class="text-white fw-bold"><%= booking.theater %></div>
+                  </div>
+                </div>
+
+                <div class="col-sm-6">
+                  <div class="border border-secondary rounded p-3 h-100">
+                    <div class="small text-success fw-semibold mb-1">SHOW DATE</div>
+                    <div class="text-white fw-bold"><%= booking.date %></div>
+                  </div>
+                </div>
+
+                <div class="col-sm-6">
+                  <div class="border border-secondary rounded p-3 h-100">
+                    <div class="small text-success fw-semibold mb-1">SHOW TIME</div>
+                    <div class="text-white fw-bold"><%= booking.time %></div>
+                  </div>
+                </div>
+
+                <div class="col-sm-6">
+                  <div class="border border-secondary rounded p-3 h-100">
+                    <div class="small text-success fw-semibold mb-1">SEATS</div>
+                    <div class="text-white fw-bold"><%= booking.seats.join(', ') %></div>
+                  </div>
+                </div>
+
+                <div class="col-sm-6">
+                  <div class="border border-secondary rounded p-3 h-100">
+                    <div class="small text-success fw-semibold mb-1">TOTAL PAID</div>
+                    <div class="text-white fw-bold fs-5"><%= booking.currency %> <%= booking.total %></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Details -->
+      <div class="card bg-dark border border-secondary mt-4">
+        <div class="card-header bg-transparent text-white">
+          <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Information</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="small text-white-50">CARDHOLDER NAME</div>
+              <div class="text-white fw-semibold"><%= booking.card_name %></div>
+            </div>
+            <div class="col-md-4">
+              <div class="small text-white-50">PAYMENT STATUS</div>
+              <div class="text-success fw-semibold text-uppercase">
+                <i class="fas fa-check-circle me-1"></i><%= booking.status %>
+              </div>
+            </div>
+            
+          </div>
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <div class="small text-white-50">PAYMENT DATE</div>
+              <div class="text-white fw-semibold"><%= booking.payment_date %></div>
+            </div>
+            <div class="col-md-6">
+              <div class="small text-white-50">PAYMENT TIME</div>
+              <div class="text-white fw-semibold"><%= booking.payment_time %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="text-center mt-4">
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+          <a href="/" class="btn btn-outline-light">
+            <i class="fas fa-home me-2"></i>Back to Home
+          </a>
+          <a href="/" class="btn btn-primary">
+            <i class="fas fa-film me-2"></i>Browse More Movies
+          </a>
+        </div>
+      </div>
+
+      <!-- Important Note -->
+      <div class="alert alert-info mt-4">
+        <div class="d-flex align-items-start">
+          <i class="fas fa-info-circle text-info me-3 mt-1"></i>
+          <div>
+            <h6 class="text-info mb-2">Important Information:</h6>
+            <ul class="mb-0 small">
+              <li>Please arrive at the theater at least 15 minutes before showtime</li>
+              <li>Bring a valid ID for verification</li>
+              <li>You can show this confirmation on your mobile device or print it out</li>
+              <li>Payment ID: <strong>#<%= booking.id.toString().padStart(6, '0') %></strong> - Keep this for your records</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<style>
+@media print {
+  .btn, .alert, .card-header {
+    display: none !important;
+  }
+  .container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+  }
+  .card {
+    border: 2px solid #000 !important;
+    box-shadow: none !important;
+  }
+  .text-white, .text-success {
+    color: #000 !important;
+  }
+  .bg-dark {
+    background-color: #fff !important;
+  }
+}
+</style>
 
 <%- include('../partials/footer') %>

@@ -1,4 +1,5 @@
 <%- include('../../partials/header', { title: `Edit: ${movie.title}`, user }) %>
+<%- include('../../partials/message') %>
 <style>
   /* Tiny chip UI (Bootstrap-compatible) */
   .chip {
@@ -15,7 +16,7 @@
 </style>
 
 <div class="container py-4">
-  <a href="/admin/movies" class="btn btn-link px-0 mb-3">&larr; Back to movies</a>
+  <a href="/admin/movies" class="btn btn-primary btn-sm">&larr; Back to movies</a>
 
   <h1 class="h3 mb-4">Edit movie</h1>
 
@@ -72,7 +73,6 @@
                class="form-control"
                placeholder="https://youtube.com/watch?v=..."
                value="<%= movie.trailer_url || '' %>">
-        <div class="form-text">Paste a full URL (YouTube, Vimeo, etc.).</div>
       </div>
 
       <div class="mb-3">
@@ -110,9 +110,6 @@
           <div id="genre-menu" class="dropdown-menu w-100"></div>
         </div>
 
-        <div class="form-text mt-2">
-          Type to search, hit <kbd>Enter</kbd> or click to add. Click the × on a chip to remove.
-        </div>
       </div>
 
       <div class="mt-4">
@@ -124,7 +121,6 @@
       <div class="mb-3">
         <label class="form-label">Poster image (upload)</label>
         <input class="form-control" type="file" name="poster" accept="image/*">
-        <div class="form-text">JPEG/PNG. If you don’t upload, the current poster stays.</div>
       </div>
 
       <div class="mb-3">

@@ -1,0 +1,17 @@
+<%- include('../partials/header', { title: 'Payment Failed', user }) %>
+
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card text-center border-danger bg-dark text-white">
+        <div class="card-header fw-bold fs-4 text-danger">Payment Failed</div>
+        <div class="card-body">
+          <p class="card-text"><%= message %></p>
+          <a href="/" class="btn btn-light mt-3">Back to Home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
