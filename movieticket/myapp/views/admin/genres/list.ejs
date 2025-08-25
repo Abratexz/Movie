@@ -1,0 +1,32 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Genres</h1>
+    <a href="/admin/genres/new" class="btn btn-danger">New genre</a>
+  </div>
+
+  <table class="table table-dark table-hover align-middle">
+    <thead><tr><th style="width:80px">ID</th><th>Name</th><th style="width:160px"></th></tr></thead>
+    <tbody>
+      <% if (!genres.length) { %>
+        <tr><td colspan="3" class="text-center text-muted py-4">No genres yet</td></tr>
+      <% } %>
+      <% genres.forEach(g => { %>
+        <tr>
+          <td><%= g.id %></td>
+          <td><%= g.name %></td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-light" href="/admin/genres/<%= g.id %>/edit">Edit</a>
+            <form action="/admin/genres/<%= g.id %>/delete" method="post" class="d-inline"
+                  onsubmit="return confirm('Delete this genre?')">
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../../partials/footer') %>

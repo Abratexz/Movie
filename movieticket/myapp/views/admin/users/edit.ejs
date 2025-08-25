@@ -1,0 +1,67 @@
+<%- include('../../partials/header', { title: 'Edit User', user }) %>
+
+<div class="container py-4">
+  <a href="/admin/users" class="btn btn-link px-0 mb-3">&larr; Back to users</a>
+
+  <h1 class="h3 mb-4">Edit: <%= row.name %></h1>
+
+  <form method="post" action="/admin/users/<%= row.id %>" class="row g-4">
+    <div class="col-md-8">
+      <div class="mb-3">
+        <label class="form-label">Name *</label>
+        <input
+          name="name"
+          class="form-control"
+          required
+          value="<%= row.name %>"
+          placeholder="Full name"
+          autocomplete="name">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Email *</label>
+        <input
+          name="email"
+          type="email"
+          class="form-control"
+          required
+          value="<%= row.email %>"
+          placeholder="name@example.com"
+          autocomplete="email">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Phone</label>
+        <input
+          name="phone"
+          class="form-control"
+          value="<%= row.phone || '' %>"
+          placeholder="08x-xxx-xxxx"
+          autocomplete="tel">
+        <div class="form-text">Optional.</div>
+      </div>
+
+      <div class="mt-2">
+        <button class="btn btn-primary px-4">Save Changes</button>
+        <a href="/admin/users" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="mb-3">
+        <label class="form-label">Role</label>
+        <select name="role" class="form-select">
+          <option value="customer" <%= row.role==='customer'?'selected':'' %>>Customer</option>
+          <option value="staff"    <%= row.role==='staff'?'selected':'' %>>Staff</option>
+          <option value="admin"    <%= row.role==='admin'?'selected':'' %>>Admin</option>
+        </select>
+      </div>
+
+      <div class="alert alert-secondary small">
+        Password isn’t editable here. Add a “reset password” flow if needed.
+      </div>
+    </div>
+  </form>
+</div>
+
+<%- include('../../partials/footer') %>

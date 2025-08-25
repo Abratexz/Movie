@@ -1,0 +1,18 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="container py-4">
+  <a href="/admin/genres" class="btn btn-link px-0 mb-3">&larr; Back to genres</a>
+  <h1 class="h4 mb-4">Edit genre</h1>
+
+  <form method="post" action="/admin/genres/<%= genre.id %>/edit" class="col-md-6">
+    <div class="mb-3">
+      <label class="form-label">Name</label>
+      <input name="name" class="form-control" required
+             placeholder="e.g., Adventure"
+             value="<%= genre.name %>">
+    </div>
+    <button class="btn btn-danger">Save changes</button>
+  </form>
+</div>
+
+<%- include('../../partials/footer') %>

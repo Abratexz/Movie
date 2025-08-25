@@ -1,0 +1,36 @@
+<%- include('../partials/header', { title: "Forgot Password" }) %>
+
+<section class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+  <div class="card bg-dark text-white p-4 shadow-lg" style="max-width: 480px; width: 100%;">
+    <h3 class="mb-3 text-center">🔑 Forgot Password</h3>
+    <p class="text-muted text-center">Enter your email and we'll send you a reset link.</p>
+
+    <form method="POST" action="/auth/forgot">
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input id="email" name="email" type="email" class="form-control bg-secondary text-white" required />
+      </div>
+      
+      <% if (error && error.length > 0) { %>
+        <div class="alert alert-danger text-center"><%= error[0] %></div>
+      <% } %>
+      <% if (success && success.length > 0) { %>
+        <div class="alert alert-success text-center">
+          <%= success[0] %>
+          <% if (resetLink) { %>
+            <br>
+            <a href="<%= resetLink %>" class="text-success">
+            Reset Password Link
+            </a>
+          <% } %>
+        </div>
+      <% } %>
+      
+      <div class="d-grid">
+        <button class="btn btn-danger">Send Reset Link</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>

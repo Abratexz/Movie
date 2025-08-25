@@ -1,0 +1,66 @@
+<%- include('../../partials/header', { title: 'New Showtime', user }) %>
+
+<div class="container py-4">
+  <a href="/admin/showtimes" class="btn btn-link px-0 mb-3">&larr; Back to showtimes</a>
+
+  <h1 class="h3 mb-4">New Showtime</h1>
+
+  <form method="POST" action="/admin/showtimes/new" class="row g-4">
+    <div class="col-md-8">
+
+      <div class="mb-3">
+        <label class="form-label">Movie</label>
+        <select name="movie_id" class="form-select" required>
+          <option value="">-- Select Movie --</option>
+          <% (movies || []).forEach(m => { %>
+            <option value="<%= m.id %>"><%= m.title %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Screen</label>
+        <select name="screen_id" class="form-select" required>
+          <option value="">-- Select Screen --</option>
+          <% (screens || []).forEach(s => { %>
+            <option value="<%= s.id %>"><%= s.name %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Start Time</label>
+        <input type="datetime-local" name="start_utc" class="form-control" required>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Base Price</label>
+          <input type="number" name="base_price" class="form-control" min="0" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Currency</label>
+          <input type="text" name="currency" class="form-control" maxlength="3" value="THB">
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Format</label>
+          <input type="text" name="format" class="form-control" placeholder="e.g., IMAX, 3D">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Language</label>
+          <input type="text" name="language" class="form-control" placeholder="e.g., EN, TH">
+        </div>
+      </div>
+
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4">Create Showtime</button>
+        <a href="/admin/showtimes" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<%- include('../../partials/footer') %>

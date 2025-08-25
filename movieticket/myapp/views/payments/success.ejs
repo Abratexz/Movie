@@ -1,0 +1,9 @@
+<%- include('../partials/header', { title: 'Payment Success', user }) %>
+
+<div class="container my-5 text-center text-white">
+  <h1 class="mb-3"><i class="fas fa-check-circle text-success"></i> <%= message %></h1>
+  <p>Your booking for Showtime ID <%= booking.showtime_id %> (Seats: <%= booking.seats %>) is confirmed.</p>
+  <a href="/" class="btn btn-primary mt-3">Back to Home</a>
+</div>
+
+<%- include('../partials/footer') %>

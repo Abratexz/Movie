@@ -1,0 +1,420 @@
+<%- include('../partials/header', { title: movie.title, user }) %>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+<style>
+  .seat-btn{ width:36px;height:36px; display:inline-flex; align-items:center; justify-content:center; }
+  .seat-btn i{ font-size:16px; line-height:1; }
+  #seat-wrap .card-body{ padding:16px 20px; }
+
+
+  .seat-row{
+    display:grid;
+    grid-template-columns: 28px 1fr 28px; 
+    column-gap: 8px;
+    align-items:center;
+    margin-bottom:10px;
+    width:100%;
+  }
+
+  .seat-row .row-label{
+    text-align:center;
+    color:#9ca3af;
+    font-weight:600;
+    user-select:none;
+  }
+
+  .seat-row-grid{
+    display:grid;
+    gap:8px;
+    width:100%;
+  }
+
+  .aisle-gap{ width:24px; }
+
+  .seat-btn{
+    width:100%;
+    aspect-ratio:1/1;               
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+</style>
+
+<% const hasTheaters = Array.isArray(theaters) && theaters.length > 0; %>
+
+<div class="position-relative bg-dark">
+  <div class="ratio ratio-21x9">
+    <div class="w-100 h-100"
+         style="background-image:url('/images/<%= movie.backdrop_url %>');
+                background-size:cover;background-position:center;filter:brightness(.45)"></div>
+  </div>
+  <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center">
+    <div class="container">
+      <div class="row g-4 align-items-center">
+        <div class="col-12 col-md-3 text-center">
+          <img src="/images/<%= movie.poster_url %>" alt="<%= movie.title %>"
+               class="img-fluid rounded border border-3 border-danger-subtle shadow-lg"
+               style="max-height: 420px; object-fit: cover;">
+        </div>
+        <div class="col-12 col-md-9 text-white">
+          <h1 class="display-6 fw-bold mb-2"><%= movie.title %></h1>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="badge bg-warning text-dark"><%= movie.rating || 'NR' %></span>
+            <% if (movie.duration_min) { %><span class="badge bg-secondary"><%= movie.duration_min %> min</span><% } %>
+            <span class="badge bg-secondary"><%= movie.release_date ? new Date(movie.release_date).getFullYear() : 'TBA' %></span>
+          </div>
+          <% if (movie.description) { %>
+            <p class="text-white-50 mb-0"><%= movie.description %></p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container my-5">
+  <div class="row g-4">
+
+    <!-- LEFT -->
+    <div class="col-lg-8">
+      <ul class="nav nav-pills justify-content-between mb-3 border-bottom border-secondary pb-2">
+        <li class="nav-item"><span id="step1" class="nav-link active fw-semibold"><span class="me-2 badge bg-light text-dark">1</span> Select Showtime</span></li>
+        <li class="nav-item"><span id="step2" class="nav-link disabled text-white-50"><span class="me-2 badge bg-light text-dark">2</span> Select Seats</span></li>
+        <li class="nav-item"><span class="nav-link disabled text-white-50"><span class="me-2 badge bg-light text-dark">3</span> Buy</span></li>
+      </ul>
+
+      <div class="card bg-dark border border-danger-subtle">
+        <div class="card-body">
+          <% if (!hasTheaters) { %>
+            <div class="text-center text-white-50 py-4">
+              <i class="fas fa-calendar-times fs-1 d-block mb-2"></i>
+              <p class="mb-1">No showtimes are currently available for this movie.</p>
+              <p class="mb-0">Please check back later or contact the theater for more information.</p>
+            </div>
+          <% } else { %>
+
+            <!-- Theater selector -->
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <label class="text-white-50">Theater</label>
+              <select id="theater-select" class="form-select w-auto">
+                <% theaters.forEach((t,i)=> { %>
+                  <option value="<%= t.id %>" <%= i===0 ? 'selected' : '' %>><%= t.name %></option>
+                <% }) %>
+              </select>
+            </div>
+
+            <!-- Date row -->
+            <ul class="nav nav-pills flex-nowrap overflow-auto mb-4" id="date-pills"></ul>
+
+            <!-- Times -->
+            <div id="times-wrap"></div>
+
+            <!-- Divider / screen -->
+            <div class="border-top border-secondary mt-4 pt-3 d-none" id="screen-bar">
+              <div class="w-100 text-center border border-secondary rounded py-2 text-white-50">SCREEN</div>
+            </div>
+
+            <!-- Seat map -->
+            <div id="seat-wrap" class="mt-3 d-none">
+              <div class="small text-white-50">
+                Tap seats to select.
+                <span class="ms-2 badge border border-success text-success bg-transparent">Available</span>
+                <span class="ms-2 badge bg-secondary">Booked</span>
+              </div>
+              <div id="seat-grid" class="mt-3"></div>
+            </div>
+
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="col-lg-4">
+      <div class="position-sticky" style="top: 90px;">
+        <div class="card bg-dark border border-secondary">
+          <div class="card-header bg-transparent text-white-50">Summary</div>
+          <div class="card-body">
+            <div class="d-flex gap-3 mb-3">
+              <img src="/images/<%= movie.poster_url %>" alt="" class="rounded" style="width:80px;height:120px;object-fit:cover;">
+              <div class="flex-grow-1">
+                <div class="fw-semibold text-white"><%= movie.title %></div>
+                <div class="small text-white-50"><%= movie.rating || 'NR' %> • <%= movie.duration_min ? movie.duration_min + ' mins' : 'TBA' %></div>
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <div class="small text-white-50">Showtime</div>
+              <div id="sum-theater" class="text-white fw-semibold">—</div>
+              <div id="sum-datetime" class="text-white-50">—</div>
+            </div>
+
+            <div class="mb-2">
+              <div class="small text-white-50">Seats</div>
+              <div id="sum-seats" class="text-white">—</div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-3">
+              <div class="small text-white-50">Total Price</div>
+              <div class="fw-bold text-white" id="sum-total">—</div>
+            </div>
+          </div>
+          <div class="card-footer bg-transparent">
+            <button id="checkout-btn" class="btn btn-danger w-100" disabled>
+              Proceed to Checkout
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  const theaters      = <%- JSON.stringify(theaters || []) %>;
+  const dataByTheater = <%- JSON.stringify(dataByTheater || {}) %>;
+
+  // --- State ---
+  let theaterId   = theaters.length ? String(theaters[0].id) : '';
+  let selectedDate = '';
+  let selectedShowtime = null; // {id,time,date,theaterName,price,currency}
+  let seatLayout  = null;      // {rows:[{row,count}], aisles:[...]}
+  let seatMap     = new Map(); // code -> {status, class}
+  let selectedSeats = new Set();
+
+  // --- Els ---
+  const theaterSel = document.getElementById('theater-select');
+  const pills      = document.getElementById('date-pills');
+  const timesWrap  = document.getElementById('times-wrap');
+  const screenBar  = document.getElementById('screen-bar');
+  const seatWrap   = document.getElementById('seat-wrap');
+  const seatGrid   = document.getElementById('seat-grid');
+  const checkoutBtn= document.getElementById('checkout-btn');
+
+  const sumTheater = document.getElementById('sum-theater');
+  const sumDate    = document.getElementById('sum-datetime');
+  const sumSeats   = document.getElementById('sum-seats');
+  const sumTotal   = document.getElementById('sum-total');
+
+  const money = (v,c) => (v!=null && c) ? `${c} ${v}` : '—';
+  function setStep2(active){ document.getElementById('step2').classList.toggle('disabled', !active); document.getElementById('step2').classList.toggle('active', !!active); }
+  function updateSummary(){
+    const d = selectedShowtime?.date ? new Date(selectedShowtime.date + 'T00:00:00') : null;
+    sumTheater.textContent = selectedShowtime ? selectedShowtime.theaterName : '—';
+    sumDate.textContent    = selectedShowtime ? `${d.toLocaleDateString('en-US',{weekday:'short', day:'numeric', month:'short'})} • ${selectedShowtime.time}` : '—';
+    const arr = [...selectedSeats];
+    sumSeats.textContent   = arr.length ? arr.join(', ') : '—';
+    const total = (selectedShowtime?.price ?? 0) * arr.length;
+    sumTotal.textContent   = arr.length ? money(total, selectedShowtime.currency) : '—';
+    checkoutBtn.disabled   = !(selectedShowtime && arr.length);
+  }
+
+  // --- Render dates ---
+  function renderDates(){
+    const map = dataByTheater[theaterId] || {};
+    const dates = Object.keys(map).sort();
+    pills.innerHTML = '';
+    dates.forEach((d, i) => {
+      const dd = new Date(d + 'T00:00:00');
+      const label = `${dd.toLocaleDateString('en-US',{weekday:'short'})} ${dd.getDate()} ${dd.toLocaleDateString('en-US',{month:'short'})}`;
+      const li = document.createElement('li');
+      li.className = 'nav-item me-2';
+      li.innerHTML = `<button class="nav-link ${i===0?'active':''}" data-date="${d}">${label}</button>`;
+      li.querySelector('button').onclick = (e)=> selectDate(d, e.target);
+      pills.appendChild(li);
+    });
+    selectedDate = dates[0] || '';
+    renderTimes();
+  }
+
+  function selectDate(d, btn){
+    document.querySelectorAll('#date-pills .nav-link').forEach(el=>el.classList.remove('active'));
+    btn.classList.add('active');
+    selectedDate = d;
+    selectedShowtime = null;
+    selectedSeats.clear();
+    setStep2(false);
+    seatWrap.classList.add('d-none'); screenBar.classList.add('d-none');
+    updateSummary();
+    renderTimes();
+  }
+
+  // --- Render times ---
+  function renderTimes(){
+    const map  = dataByTheater[theaterId] || {};
+    const list = map[selectedDate] || [];
+    const theaterName = theaters.find(t=>String(t.id)===String(theaterId))?.name || 'Theater';
+
+    if (!list.length) { timesWrap.innerHTML = `<div class="text-white-50">No showtimes for this date.</div>`; return; }
+
+    const grid = `
+      <div class="card bg-dark border-secondary mb-2">
+        <div class="card-header d-flex align-items-center">
+          <i class="fas fa-map-marker-alt me-2 text-danger"></i>
+          <span class="fw-semibold text-warning">${theaterName}</span>
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-2">
+            ${list.map(st => {
+              const info  = [(st.screen_type || 'Digital'), (st.language || '')].filter(Boolean).join(' | ');
+              const price = st.price && st.currency ? ` • ${st.currency} ${st.price}` : '';
+              return `
+                <button class="btn btn-outline-light time-btn"
+                        data-id="${st.showtime_id}"
+                        data-time="${st.show_time}"
+                        data-price="${st.price ?? ''}"
+                        data-currency="${st.currency ?? ''}"
+                        onclick="onPickShowtime(this)">
+                  <div class="fw-semibold">${st.show_time}</div>
+                  <div class="fw-semibold small ">${info}${price}</div>
+                </button>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+    timesWrap.innerHTML = grid;
+  }
+
+  // --- Select showtime (highlight selected) + load seats ---
+  async function onPickShowtime(btn){
+    // highlight
+    document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('btn-danger','active'));
+    btn.classList.add('btn-danger','active'); // visibly selected
+
+    const theaterName = theaters.find(t=>String(t.id)===String(theaterId))?.name || '';
+    selectedShowtime = {
+      id: btn.dataset.id,
+      time: btn.dataset.time,
+      date: selectedDate,
+      theaterName,
+      price: btn.dataset.price ? Number(btn.dataset.price) : null,
+      currency: btn.dataset.currency || null
+    };
+    selectedSeats.clear(); updateSummary();
+
+    const res = await fetch(`/movies/api/showtimes/${selectedShowtime.id}/seats`);
+    if (!res.ok) { alert('Failed to load seats'); return; }
+    const data = await res.json();
+    seatLayout = data.layout || { rows: [], aisles: [] };
+
+    seatMap = new Map();
+    (data.seats || []).forEach(s => seatMap.set(s.seat_code, { status: s.status, seat_class: s.seat_class }));
+
+    renderSeatGrid(seatLayout, seatMap);
+    setStep2(true);
+    screenBar.classList.remove('d-none');
+    seatWrap.classList.remove('d-none');
+  }
+  window.onPickShowtime = onPickShowtime;
+
+  // --- Draw seat grid (icon only) ---
+  function renderSeatGrid(layout, map){
+    const rows   = Array.isArray(layout.rows) ? layout.rows : [];
+    const aisles = Array.isArray(layout.aisles) ? layout.aisles : [];
+
+    seatGrid.innerHTML = '';
+
+    rows.forEach(r => {
+      const rowLabel = String(r.row || '').toUpperCase();
+      const cnt      = Number(r.count || 0);
+
+      const rowEl = document.createElement('div');
+      rowEl.className = 'seat-row';
+
+      // left label
+      const left = document.createElement('div');
+      left.className = 'row-label';
+      left.textContent = rowLabel;
+
+      // seats grid in the middle
+      const grid = document.createElement('div');
+      grid.className = 'seat-row-grid';
+
+      // total columns = seats + aisles (empty spacers)
+      grid.style.gridTemplateColumns = `repeat(${cnt + aisles.length}, minmax(34px, 1fr))`;
+
+      for (let i = 1; i <= cnt; i++) {
+        if (aisles.includes(i)) {
+          const spacer = document.createElement('div');
+          spacer.className = 'aisle-gap';
+          grid.appendChild(spacer);
+        }
+
+        const code  = `${rowLabel}${i}`;
+        const state = map.get(code)?.status || 'available';
+
+        const btn = document.createElement('button');
+        btn.type  = 'button';
+        btn.className = seatBtnClass(state, false) + ' seat-btn';
+        btn.innerHTML = '<i class="fas fa-chair"></i>';
+        btn.dataset.code = code;
+        btn.disabled = (state === 'booked');
+        btn.title = code;
+        btn.onclick = () => toggleSeat(btn);
+
+        grid.appendChild(btn);
+      }
+
+      // right label
+      const right = document.createElement('div');
+      right.className = 'row-label';
+      right.textContent = rowLabel;
+
+      // assemble row: [label][grid][label]
+      rowEl.appendChild(left);
+      rowEl.appendChild(grid);
+      rowEl.appendChild(right);
+
+      seatGrid.appendChild(rowEl);
+    });
+  }
+
+  function seatBtnClass(status, selected){
+    if (selected) return 'btn btn-success';
+    if (status === 'available') return 'btn btn-outline-success';
+    return 'btn btn-secondary'; // booked
+  }
+
+  function toggleSeat(btn){
+    const code = btn.dataset.code;
+    if (selectedSeats.has(code)) {
+      selectedSeats.delete(code);
+      btn.className = 'btn btn-outline-success seat-btn';
+    } else {
+      selectedSeats.add(code);
+      btn.className = 'btn btn-success seat-btn';
+    }
+    btn.innerHTML = '<i class="fas fa-chair"></i>';
+    updateSummary();
+  }
+
+  // --- Proceed ---
+  checkoutBtn?.addEventListener('click', () => {
+    const seats = [...selectedSeats];
+    if (!selectedShowtime || seats.length === 0) return;
+    const params = new URLSearchParams({
+      showtime: selectedShowtime.id,
+      seats: seats.join(',')
+    });
+    // send to your booking flow
+    window.location.href = `/payment/seats?${params.toString()}`;
+  });
+
+  theaterSel?.addEventListener('change', (e) => {
+    theaterId = String(e.target.value);
+    selectedShowtime = null;
+    selectedSeats.clear();
+    setStep2(false);
+    seatWrap.classList.add('d-none'); screenBar.classList.add('d-none');
+    updateSummary();
+    renderDates();
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (<%= hasTheaters ? 'true' : 'false' %>) renderDates();
+  });
+</script>
+
+<%- include('../partials/footer') %>

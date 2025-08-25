@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title || "MovieTicket" %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .navbar {
+      background-color: #000 !important;
+    }
+    .navbar-brand {
+      font-weight: bold;
+      color: #f00 !important;
+    }
+    .navbar-nav .nav-link {
+      color: #fff !important;
+    }
+    .navbar-nav .nav-link:hover {
+      color: #f00 !important;
+    }
+    
+  </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">MovieTicket</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <% if (user) { %>
+            <li class="nav-item"><a class="nav-link" href="/favorites"><i class="bi bi-heart"></i> Favorites</a></li>
+            <li class="nav-item"><a class="nav-link" href="/bookings">My Tickets</a></li>
+            <% if (user && user.role === 'admin') { %>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                  Manage
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="adminMenu">
+                  <li><h6 class="dropdown-header">Admin</h6></li>
+                  <li><a class="dropdown-item" href="/admin/users">Users</a></li>
+                  <li><a class="dropdown-item" href="/admin/movies">Movies</a></li>
+                  <li><a class="dropdown-item" href="/admin/genres">Genres</a></li>
+                  <li><a class="dropdown-item" href="/admin/showtimes">Showtimes</a></li>
+                </ul>
+              </li>
+            <% } %>
+            <li class="nav-item"><a class="nav-link" href="/auth/logout">Logout</a></li>
+          <% } else { %>
+            <li class="nav-item"><a class="nav-link" href="/auth/login">Login</a></li>
+            <li class="nav-item"><a class="nav-link" href="/auth/register">Register</a></li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <main class="container py-4 flex-fill">
+    <!-- Flash messages -->
+    <% if (locals.flash && flash.error && flash.error.length) { %>
+      <div class="alert alert-danger"><%= flash.error.join('<br>') %></div>
+    <% } %>
+    <% if (locals.flash && flash.success && flash.success.length) { %>
+      <div class="alert alert-success"><%= flash.success.join('<br>') %></div>
+    <% } %>

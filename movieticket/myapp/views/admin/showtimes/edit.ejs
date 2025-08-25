@@ -1,0 +1,102 @@
+<%- include('../../partials/header', { title: `Edit: #${showtime.id}`, user }) %>
+
+<% // local -> 'YYYY-MM-DDTHH:mm' for datetime-local without TZ math
+function pad(n){ return n < 10 ? '0'+n : n; }
+function localInput(dt){
+  const d = (dt instanceof Date) ? dt : new Date(dt);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())
+       +'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+%>
+
+
+<div class="container py-4">
+  <a href="/admin/showtimes" class="btn btn-link px-0 mb-3">&larr; Back to showtimes</a>
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">Edit Showtime</h1>
+    <a href="/admin/showtimes/<%= showtime.id %>/seats" class="btn btn-outline-info">Seats</a>
+  </div>
+
+  <% if (typeof messages !== 'undefined' && (messages.error || messages.success)) { %>
+    <% (messages.error || []).forEach(m => { %>
+      <div class="alert alert-danger"><%= m %></div>
+    <% }) %>
+    <% (messages.success || []).forEach(m => { %>
+      <div class="alert alert-success"><%= m %></div>
+    <% }) %>
+  <% } %>
+
+  <form method="POST" action="/admin/showtimes/<%= showtime.id %>/edit" class="row g-4">
+    <div class="col-md-8">
+
+      <div class="mb-3">
+        <label class="form-label">Movie</label>
+        <select name="movie_id" class="form-select" required>
+          <% (movies || []).forEach(m => { %>
+            <option value="<%= m.id %>" <%= String(m.id) === String(showtime.movie_id) ? 'selected' : '' %>>
+              <%= m.title %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Screen</label>
+        <select name="screen_id" class="form-select" required>
+          <% (screens || []).forEach(s => { %>
+            <option value="<%= s.id %>" <%= String(s.id) === String(showtime.screen_id) ? 'selected' : '' %>>
+              <%= s.name %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Start Time</label>
+        <input type="datetime-local" name="start_utc" class="form-control"
+        value="<%= localInput(showtime.start_utc) %>" required>
+        <div class="form-text">Saved in the database as UTC; shown here in your local time.</div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Base Price</label>
+          <input type="number" name="base_price" class="form-control" min="0" step="1"
+                 value="<%= showtime.base_price %>" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Currency</label>
+          <input type="text" name="currency" maxlength="3" class="form-control"
+                 value="<%= showtime.currency || 'THB' %>" placeholder="THB">
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Format</label>
+          <input type="text" name="format" class="form-control" value="<%= showtime.format || '' %>" placeholder="e.g., IMAX, 3D">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Language</label>
+          <input type="text" name="language" class="form-control" value="<%= showtime.language || '' %>" placeholder="e.g., EN, TH">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+          <option value="scheduled" <%= showtime.status === 'scheduled' ? 'selected' : '' %>>Scheduled</option>
+          <option value="cancelled" <%= showtime.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+        </select>
+      </div>
+
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-danger px-4">Save changes</button>
+        <a href="/admin/showtimes" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<%- include('../../partials/footer') %>

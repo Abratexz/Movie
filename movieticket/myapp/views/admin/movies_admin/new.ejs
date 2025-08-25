@@ -1,0 +1,139 @@
+<%- include('../../partials/header', { title: 'New Movie', user }) %>
+
+<div class="container py-4">
+  <a href="/admin/movies" class="btn btn-link px-0 mb-3">&larr; Back to movies</a>
+
+  <h1 class="h3 mb-4">New Movie</h1>
+
+  <form method="post" action="/admin/movies" enctype="multipart/form-data" class="row g-4">
+    <div class="col-md-8">
+
+      <div class="mb-3">
+        <label class="form-label">Title</label>
+        <input name="title" class="form-control" required
+               placeholder="Title">
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Duration (minutes)</label>
+          <input name="duration_min" type="number" min="0" class="form-control"
+                 placeholder="e.g., 110">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Rating</label>
+          <input name="rating" class="form-control"
+                 placeholder="e.g., G / PG-13 / 18+">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Release date</label>
+          <input name="release_date" type="date" class="form-control">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Trailer URL</label>
+        <input name="trailer_url" type="url" class="form-control"
+               placeholder="https://youtube.com/watch?v=...">
+        <div class="form-text">Paste a full URL (YouTube, Vimeo, etc.).</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="5" class="form-control"
+                  placeholder="Short synopsis that will appear on the detail page..."></textarea>
+      </div>
+
+      <!-- Genres -->
+      <div class="mb-3">
+        <label class="form-label d-flex align-items-center gap-2">
+          Genres
+          <a class="small" href="/admin/genres">manage genres</a>
+        </label>
+
+        <% if ((genres || []).length) { %>
+          <div class="row row-cols-2 row-cols-md-3 g-2">
+            <% genres.forEach(g => { %>
+              <div class="col">
+                <label class="form-check form-check-inline w-100">
+                  <input class="form-check-input"
+                         type="checkbox"
+                         name="genre_ids[]"   
+                         value="<%= g.id %>">
+                  <span class="form-check-label"><%= g.name %></span>
+                </label>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="text-muted small">No genres yet. Create some in <a href="/admin/genres">Genres</a>.</div>
+        <% } %>
+        <div class="form-text">Tick one or more genres that apply.</div>
+      </div>
+
+      <div class="mt-4">
+        <button class="btn btn-primary px-4">Create Movie</button>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="mb-3">
+        <label class="form-label">Poster image (upload)</label>
+        <input class="form-control" type="file" name="poster" id="posterFile">
+        <div class="form-text">JPEG/PNG. If you upload a file, it overrides the URL below.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">or Poster URL</label>
+        <input class="form-control" name="poster_url" id="posterUrl"
+               placeholder="posters/file.jpg or https://...">
+        <div class="form-text">
+          Relative to <code>/public/images</code> (e.g. <code>posters/kon.jpg</code>) or a full URL.
+        </div>
+      </div>
+
+      <!-- Preview (hidden until a file/URL is provided) -->
+      <div class="card d-none" id="posterPreviewCard">
+        <div class="card-header py-2">Preview</div>
+        <div class="card-body text-center">
+          <img id="posterPreview" alt="poster" class="img-fluid rounded">
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+(() => {
+  const fileInput = document.getElementById('posterFile');
+  const urlInput  = document.getElementById('posterUrl');
+  const card      = document.getElementById('posterPreviewCard');
+  const img       = document.getElementById('posterPreview');
+
+  function show(src) {
+    if (!src) {
+      img.removeAttribute('src');
+      card.classList.add('d-none');
+      return;
+    }
+    img.src = src;
+    card.classList.remove('d-none');
+  }
+
+  fileInput?.addEventListener('change', () => {
+    const f = fileInput.files?.[0];
+    if (f) {
+      show(URL.createObjectURL(f));
+    }
+  });
+
+  urlInput?.addEventListener('input', () => {
+    const v = urlInput.value.trim();
+    if (!v) return show('');
+    const src = v.startsWith('http') ? v : '/images/' + v.replace(/^\/+/, '');
+    show(src);
+  });
+})();
+</script>
+
+<%- include('../../partials/footer') %>

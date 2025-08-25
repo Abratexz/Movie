@@ -1,0 +1,43 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h5 mb-0"><%= st.title %> — <%= st.screen_name %> <span>#<%= st.id %></span></h1>
+    <a class="btn btn-outline-secondary" href="/admin/showtimes">Back</a>
+  </div>
+
+  <div class="text-white-50 mb-2">
+    <strong><%= new Date(st.start_utc).toLocaleString() %></strong>
+    · <%= st.format || '2D' %> · <%= st.language || '-' %>
+  </div>
+
+  <div class="mb-3 small">
+    <span class="badge bg-success">Available</span>
+    <span class="badge bg-danger">Booked</span>
+  </div>
+
+  <% if (!grid || grid.length === 0) { %>
+    <div class="alert alert-dark">No seat map to display.</div>
+  <% } else { %>
+    <div class="p-3 bg-dark rounded-3 shadow-sm" style="overflow:auto">
+      <div class="text-center text-white-50 mb-2">SCREEN</div>
+      <div class="d-flex flex-column gap-2 align-items-center">
+        <% grid.forEach(row => { %>
+          <div class="d-flex gap-1">
+            <% row.forEach(seat => {
+                 const booked = (seat.status || '').toLowerCase() === 'booked';
+                 const cls = booked ? 'btn-danger' : 'btn-success';
+            %>
+              <button type="button" class="btn btn-sm <%= cls %>" disabled
+                      title="<%= seat.label %> • <%= booked ? 'booked' : 'available' %>">
+                <%= seat.label %>
+              </button>
+            <% }) %>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

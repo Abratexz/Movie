@@ -1,0 +1,13 @@
+<%- include('partials/header', { title: "Welcome | MovieTicket 🎬", user: user }) %>
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+  <div class="text-center p-5 bg-dark text-light rounded shadow welcome-box">
+    <h1 class="display-5 fw-bold mb-4">🎥 Welcome to Movie Ticket</h1>
+    <div class="d-flex justify-content-center gap-3">
+      <a href="/auth/login" class="btn btn-primary btn-lg">Login</a>
+      <a href="/auth/register" class="btn btn-outline-light btn-lg">Register</a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

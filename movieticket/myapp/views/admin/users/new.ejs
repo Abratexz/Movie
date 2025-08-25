@@ -1,0 +1,55 @@
+<%- include('../../partials/header', { title: 'New User', user }) %>
+
+<div class="container py-4">
+  <a href="/admin/users" class="btn btn-link px-0 mb-3">&larr; Back to users</a>
+
+  <h1 class="h3 mb-4">New User</h1>
+
+  <form method="post" action="/admin/users" class="row g-4">
+    <div class="col-md-8">
+      <div class="mb-3">
+        <label class="form-label">Name *</label>
+        <input name="name" class="form-control" required
+               placeholder="Full name" autocomplete="name">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Email *</label>
+        <input name="email" type="email" class="form-control" required
+               placeholder="name@example.com" autocomplete="email">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Phone</label>
+        <input name="phone" class="form-control"
+               placeholder="08x-xxx-xxxx" autocomplete="tel">
+        <div class="form-text">Optional.</div>
+      </div>
+
+      <div class="mt-2">
+        <button class="btn btn-primary px-4">Create User</button>
+        <a href="/admin/users" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="mb-3">
+        <label class="form-label">Role</label>
+        <select name="role" class="form-select">
+          <option value="customer" selected>Customer</option>
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input name="password" class="form-control"
+               placeholder="default: 123">
+        <div class="form-text">Leave blank to use the default.</div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<%- include('../../partials/footer') %>

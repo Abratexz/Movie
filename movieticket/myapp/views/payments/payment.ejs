@@ -1,0 +1,88 @@
+<%- include('../partials/header', { title: 'Payment', user }) %>
+
+<div class="container my-5">
+  <div class="row g-4">
+    <!-- LEFT: Mock Payment -->
+    <div class="col-lg-8">
+      <div class="card bg-dark border border-danger-subtle">
+        <div class="card-header text-white fw-semibold">
+          Mock Payment
+        </div>
+        <div class="card-body text-white">
+          <form action="/booking/confirm" method="POST">
+            <input type="hidden" name="showtime_id" value="<%= booking.showtime_id %>">
+            <input type="hidden" name="seats" value="<%= booking.seats.join(',') %>">
+
+            <div class="mb-3">
+              <label class="form-label">Cardholder Name</label>
+              <input type="text" class="form-control" name="card_name" placeholder="John Doe" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Card Number</label>
+              <input type="text" class="form-control" name="card_number" placeholder="4111 1111 1111 1111" required>
+              <div class="form-text text-secondary">* ใช้เลขการ์ดใด ๆ ได้เพราะเป็น mock</div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Expiry Date</label>
+                <input type="text" class="form-control" name="expiry" placeholder="MM/YY" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">CVV</label>
+                <input type="password" class="form-control" name="cvv" placeholder="123" required>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100">
+              Pay <%= booking.currency %> <%= booking.total %>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Summary -->
+    <div class="col-lg-4">
+      <div class="card bg-dark border border-secondary">
+        <div class="card-header bg-transparent text-white-50">Summary</div>
+        <div class="card-body">
+          <div class="d-flex gap-3 mb-3">
+             <!-- ดึง poster จาก database -->
+<img src="/images/<%= movie.poster_url %>" 
+     alt="<%= movie.title %>" 
+     class="rounded shadow-sm" 
+     style="width:120px; height:180px; object-fit:cover; border:1px solid #444;">
+     
+              <div class="fw-semibold text-white"><%= movie.title %></div>
+              <div class="small text-white-50"><%= movie.rating || 'NR' %> • <%= movie.duration_min %> mins</div>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <div class="small text-white-50">Theater</div>
+            <div class="text-white fw-semibold"><%= booking.theater %></div>
+          </div>
+
+          <div class="mb-2">
+            <div class="small text-white-50">Date & Time</div>
+            <div class="text-white fw-semibold"><%= booking.date %> • <%= booking.time %></div>
+          </div>
+
+          <div class="mb-2">
+            <div class="small text-white-50">Seats</div>
+            <div class="text-white"><%= booking.seats.join(', ') %></div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-3">
+            <div class="small text-white-50">Total Price</div>
+            <div class="fw-bold text-white"><%= booking.currency %> <%= booking.total %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

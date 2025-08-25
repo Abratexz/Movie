@@ -1,0 +1,291 @@
+<%- include('../../partials/header', { title: `Edit: ${movie.title}`, user }) %>
+<style>
+  /* Tiny chip UI (Bootstrap-compatible) */
+  .chip {
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.25rem .5rem; border:1px solid var(--bs-border-color);
+    border-radius:999px; background:rgba(255,255,255,.05);
+  }
+  .chip .remove {
+    cursor:pointer; opacity:.8;
+  }
+  .chip .remove:hover { opacity:1; }
+  /* Keep dropdown above other form items */
+  #genre-menu.show { display:block; max-height: 260px; overflow:auto; }
+</style>
+
+<div class="container py-4">
+  <a href="/admin/movies" class="btn btn-link px-0 mb-3">&larr; Back to movies</a>
+
+  <h1 class="h3 mb-4">Edit movie</h1>
+
+  <form method="post"
+        action="/admin/movies/<%= movie.id %>/edit"
+        enctype="multipart/form-data"
+        class="row g-4">
+
+    <!-- Keep current poster if nothing new is provided -->
+    <input type="hidden" name="existing_poster" value="<%= movie.poster_url %>">
+
+    <div class="col-md-8">
+
+      <div class="mb-3">
+        <label class="form-label">Title</label>
+        <input name="title"
+               class="form-control"
+               required
+               placeholder="e.g., K-On! Live"
+               value="<%= movie.title || '' %>">
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Duration (minutes)</label>
+          <input name="duration_min"
+                 type="number" min="0"
+                 class="form-control"
+                 placeholder="e.g., 110"
+                 value="<%= movie.duration_min || '' %>">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Rating</label>
+          <input name="rating"
+                 class="form-control"
+                 placeholder="e.g., G / PG-13 / 18+"
+                 value="<%= movie.rating || '' %>">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Release date</label>
+          <input name="release_date"
+                 type="date"
+                 class="form-control"
+                 value="<%= movie.release_date && movie.release_date.toISOString ? movie.release_date.toISOString().slice(0,10) : (movie.release_date || '') %>">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Trailer URL</label>
+        <input name="trailer_url"
+               type="url"
+               class="form-control"
+               placeholder="https://youtube.com/watch?v=..."
+               value="<%= movie.trailer_url || '' %>">
+        <div class="form-text">Paste a full URL (YouTube, Vimeo, etc.).</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description"
+                  rows="5"
+                  class="form-control"
+                  placeholder="Short synopsis that will appear on the detail page..."><%= movie.description || '' %></textarea>
+      </div>
+
+      <!-- Genres (searchable dropdown + chips) -->
+      <div class="mb-3" id="genre-picker">
+        <label class="form-label d-flex align-items-center gap-2">
+          Genres
+          <a class="small" href="/admin/genres">manage genres</a>
+        </label>
+
+        <!-- Selected chips live here -->
+        <div id="genre-chips" class="d-flex flex-wrap gap-2 mb-2"></div>
+
+        <!-- Hidden inputs that will be submitted -->
+        <div id="genre-hidden"></div>
+
+        <!-- Search box + dropdown -->
+        <div class="position-relative">
+          <input
+            id="genre-search"
+            type="text"
+            class="form-control"
+            autocomplete="off"
+            placeholder="Type to search & add genres…"
+            aria-expanded="false"
+            aria-controls="genre-menu"
+          />
+          <div id="genre-menu" class="dropdown-menu w-100"></div>
+        </div>
+
+        <div class="form-text mt-2">
+          Type to search, hit <kbd>Enter</kbd> or click to add. Click the × on a chip to remove.
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <button class="btn btn-danger px-4">Save changes</button>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="mb-3">
+        <label class="form-label">Poster image (upload)</label>
+        <input class="form-control" type="file" name="poster" accept="image/*">
+        <div class="form-text">JPEG/PNG. If you don’t upload, the current poster stays.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">or Poster URL</label>
+        <input class="form-control"
+               name="poster_url"
+               placeholder="posters/...jpg">
+        <div class="form-text">
+
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header py-2">Current Poster</div>
+        <div class="card-body text-center">
+          <img alt="poster"
+               class="img-fluid rounded"
+               src="/images/<%= movie.poster_url || 'posters/default.png' %>"
+               onerror="this.onerror=null;this.src='/images/posters/default.png'">
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+  (() => {
+    // ----- Data from the server -----
+    const ALL_GENRES = <%- JSON.stringify((genres || []).map(g => ({id: g.id, name: g.name}))) %>;
+    const PRESELECTED = <%- JSON.stringify((typeof selectedGenreIds !== 'undefined' ? selectedGenreIds : [])) %>;
+  
+    // ----- Elements -----
+    const chipsEl  = document.getElementById('genre-chips');
+    const hiddenEl = document.getElementById('genre-hidden');
+    const searchEl = document.getElementById('genre-search');
+    const menuEl   = document.getElementById('genre-menu');
+  
+    // ----- State -----
+    const selected = new Map(); // id -> {id,name}
+  
+    // Preselect (for edit page)
+    PRESELECTED.forEach(id => {
+      const g = ALL_GENRES.find(x => x.id === id);
+      if (g) selected.set(g.id, g);
+    });
+  
+    // ----- Rendering -----
+    function renderChips() {
+      chipsEl.innerHTML = '';
+      hiddenEl.innerHTML = '';
+  
+      if (selected.size === 0) {
+        chipsEl.insertAdjacentHTML('beforeend',
+          `<span class="text-secondary small">No genres selected</span>`);
+      } else {
+        [...selected.values()].forEach(g => {
+          chipsEl.insertAdjacentHTML('beforeend', `
+            <span class="chip">
+              <span>${escapeHtml(g.name)}</span>
+              <span class="remove text-danger" data-id="${g.id}" aria-label="Remove ${escapeHtml(g.name)}">&times;</span>
+            </span>
+          `);
+          hiddenEl.insertAdjacentHTML('beforeend',
+            `<input type="hidden" name="genre_ids[]" value="${g.id}">`);
+        });
+      }
+    }
+  
+    function renderMenu(query='') {
+      const q = query.trim().toLowerCase();
+      // exclude already selected
+      let list = ALL_GENRES.filter(g => !selected.has(g.id));
+      if (q) list = list.filter(g => g.name.toLowerCase().includes(q));
+  
+      menuEl.innerHTML = '';
+      if (list.length === 0) {
+        menuEl.insertAdjacentHTML('beforeend',
+          `<div class="dropdown-item text-muted small">No matches</div>`);
+      } else {
+        // show up to 12 suggestions
+        list.slice(0, 12).forEach(g => {
+          menuEl.insertAdjacentHTML('beforeend', `
+            <button type="button" class="dropdown-item" data-id="${g.id}">
+              ${escapeHtml(g.name)}
+            </button>
+          `);
+        });
+      }
+    }
+  
+    function openMenu() {
+      renderMenu(searchEl.value);
+      menuEl.classList.add('show');
+      searchEl.setAttribute('aria-expanded', 'true');
+    }
+  
+    function closeMenu() {
+      menuEl.classList.remove('show');
+      searchEl.setAttribute('aria-expanded', 'false');
+    }
+  
+    function addById(id) {
+      const g = ALL_GENRES.find(x => x.id === Number(id));
+      if (!g || selected.has(g.id)) return;
+      selected.set(g.id, g);
+      searchEl.value = '';
+      renderChips();
+      closeMenu();
+    }
+  
+    function removeById(id) {
+      selected.delete(Number(id));
+      renderChips();
+    }
+  
+    // ----- Events -----
+    searchEl.addEventListener('focus', openMenu);
+    searchEl.addEventListener('input', () => {
+      if (!menuEl.classList.contains('show')) openMenu();
+      renderMenu(searchEl.value);
+    });
+    searchEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        // choose first visible option
+        const first = menuEl.querySelector('[data-id]');
+        if (first) addById(first.dataset.id);
+      } else if (e.key === 'Escape') {
+        closeMenu();
+      }
+    });
+  
+    // click a suggestion
+    menuEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-id]');
+      if (!btn) return;
+      addById(btn.dataset.id);
+    });
+  
+    // click × on a chip
+    chipsEl.addEventListener('click', (e) => {
+      const x = e.target.closest('.remove');
+      if (!x) return;
+      removeById(x.dataset.id);
+    });
+  
+    // click outside to close menu
+    document.addEventListener('click', (e) => {
+      if (!document.getElementById('genre-picker').contains(e.target)) {
+        closeMenu();
+      }
+    });
+  
+    // util
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m])); }
+  
+    // initial draw
+    renderChips();
+  })();
+  </script>
+
+<%- include('../../partials/footer') %>
